@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/syedhaideralizaidi/authkit/internal/database"
 	db "github.com/syedhaideralizaidi/authkit/internal/database/sqlc"
 	"github.com/syedhaideralizaidi/authkit/internal/utils"
 
@@ -18,7 +17,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func generateResetToken() (string, error) {
+// generateResetToken generates a secure reset token
+func (c *Controller) generateResetToken() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -27,29 +27,29 @@ func generateResetToken() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-func RequestPasswordReset(c *gin.Context) {
+// RequestPasswordReset handles password reset request
+func (c *Controller) RequestPasswordReset(ctx *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Fetch user by email
-	_, err := database.Queries.GetUserByEmail(context.Background(), req.Email)
+	_, err := c.Queries.GetUserByEmail(context.Background(), req.Email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 		return
 	}
 
-	token, err := generateResetToken()
+	token, err := c.generateResetToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
@@ -61,34 +61,36 @@ func RequestPasswordReset(c *gin.Context) {
 		ResetToken:       pgtype.Text{String: token, Valid: true},
 	}
 
-	err = database.Queries.UpdateResetToken(context.Background(), requestResetToken)
+	err = c.Queries.UpdateResetToken(context.Background(), requestResetToken)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update reset token"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update reset token"})
 		return
 	}
 
 	err = utils.SendResetPasswordEmail(req.Email, token)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send reset email"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send reset email"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password reset email sent"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Password reset email sent"})
 }
 
-func ResetPassword(c *gin.Context) {
+// ResetPassword handles password reset
+func (c *Controller) ResetPassword(ctx *gin.Context) {
 	var req struct {
 		Email       string `json:"email" binding:"required,email"`
 		Token       string `json:"token" binding:"required"`
 		NewPassword string `json:"new_password" binding:"required"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
 
@@ -98,15 +100,15 @@ func ResetPassword(c *gin.Context) {
 		Email:      req.Email,
 	}
 
-	_, err = database.Queries.ResetPassword(context.Background(), requestResetPassword)
+	_, err = c.Queries.ResetPassword(context.Background(), requestResetPassword)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Password reset successful"})
 }

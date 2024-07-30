@@ -59,4 +59,4 @@ access_db:
 
 # Run the main Go application
 run:
-	go run cmd/authKit/main.go
+	go run cmd/main/main.go
