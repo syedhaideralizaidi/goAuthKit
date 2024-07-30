@@ -27,7 +27,7 @@ Before running the project, ensure you have the following installed:
 1. **Clone the Repository**
 
    ```sh
-   git clone https://github.com/syedhaideralizaidi/authkit.git
+   git clone https://github.com/syedhaideralizaidi/goAuthKit.git
    cd authkit
 
 2. **Set Up Environment Variables**
