@@ -29,7 +29,7 @@ func generateResetToken() (string, error) {
 
 func RequestPasswordReset(c *gin.Context) {
 	var req struct {
-		Email string `json:"email"`
+		Email string `json:"email" binding:"required,email"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -78,8 +78,9 @@ func RequestPasswordReset(c *gin.Context) {
 
 func ResetPassword(c *gin.Context) {
 	var req struct {
-		Token       string `json:"token"`
-		NewPassword string `json:"new_password"`
+		Email       string `json:"email" binding:"required,email"`
+		Token       string `json:"token" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -94,6 +95,7 @@ func ResetPassword(c *gin.Context) {
 	requestResetPassword := db.ResetPasswordParams{
 		Password:   string(hashedPassword),
 		ResetToken: pgtype.Text{String: req.Token, Valid: true},
+		Email:      req.Email,
 	}
 
 	err = database.Queries.ResetPassword(context.Background(), requestResetPassword)

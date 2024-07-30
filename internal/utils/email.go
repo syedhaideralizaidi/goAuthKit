@@ -3,14 +3,13 @@ package utils
 import (
 	"fmt"
 	"net/smtp"
-	"os"
 )
 
 var (
 	smtpHost     = "smtp.gmail.com"
 	smtpPort     = "587"
-	smtpUser     = os.Getenv("SMTP_USER")
-	smtpPassword = os.Getenv("SMTP_PASSWORD")
+	smtpUser     = "codopsacademy@gmail.com"
+	smtpPassword = "mkiohkzmcuytqsdr"
 )
 
 func sendEmail(to, subject, body string) error {

@@ -190,17 +190,26 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 
 const resetPassword = `-- name: ResetPassword :exec
 UPDATE users
-SET password = $1, reset_token = NULL, reset_token_expiry = NULL
-WHERE reset_token = $2 AND reset_token_expiry > NOW()
+SET
+    password = $1,
+    reset_token = NULL,
+    reset_token_expiry = NULL,
+    is_verified = CASE
+                      WHEN is_verified = false THEN true
+                      ELSE is_verified
+        END
+WHERE reset_token = $2
+  AND reset_token_expiry > NOW() AND email = $3
 `
 
 type ResetPasswordParams struct {
 	Password   string      `json:"password"`
 	ResetToken pgtype.Text `json:"reset_token"`
+	Email      string      `json:"email"`
 }
 
 func (q *Queries) ResetPassword(ctx context.Context, arg ResetPasswordParams) error {
-	_, err := q.db.Exec(ctx, resetPassword, arg.Password, arg.ResetToken)
+	_, err := q.db.Exec(ctx, resetPassword, arg.Password, arg.ResetToken, arg.Email)
 	return err
 }
 

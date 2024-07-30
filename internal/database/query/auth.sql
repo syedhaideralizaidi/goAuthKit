@@ -47,5 +47,13 @@ WHERE reset_token = $1 AND reset_token_expiry > NOW();
 
 -- name: ResetPassword :exec
 UPDATE users
-SET password = $1, reset_token = NULL, reset_token_expiry = NULL
-WHERE reset_token = $2 AND reset_token_expiry > NOW();
+SET
+    password = $1,
+    reset_token = NULL,
+    reset_token_expiry = NULL,
+    is_verified = CASE
+                      WHEN is_verified = false THEN true
+                      ELSE is_verified
+        END
+WHERE reset_token = $2
+  AND reset_token_expiry > NOW() AND email = $3;
