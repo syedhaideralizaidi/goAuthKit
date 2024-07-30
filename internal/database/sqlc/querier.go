@@ -17,7 +17,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByResetToken(ctx context.Context, resetToken pgtype.Text) (GetUserByResetTokenRow, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
-	ResetPassword(ctx context.Context, arg ResetPasswordParams) error
+	ResetPassword(ctx context.Context, arg ResetPasswordParams) (User, error)
 	UpdateResetToken(ctx context.Context, arg UpdateResetTokenParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	VerifyUser(ctx context.Context, email string) error

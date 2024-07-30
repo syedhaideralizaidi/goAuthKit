@@ -188,7 +188,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 	return items, nil
 }
 
-const resetPassword = `-- name: ResetPassword :exec
+const resetPassword = `-- name: ResetPassword :one
 UPDATE users
 SET
     password = $1,
@@ -200,6 +200,7 @@ SET
         END
 WHERE reset_token = $2
   AND reset_token_expiry > NOW() AND email = $3
+RETURNING id, email, username, phone_number, password, role, is_verified, created_at, reset_token, reset_token_expiry
 `
 
 type ResetPasswordParams struct {
@@ -208,9 +209,22 @@ type ResetPasswordParams struct {
 	Email      string      `json:"email"`
 }
 
-func (q *Queries) ResetPassword(ctx context.Context, arg ResetPasswordParams) error {
-	_, err := q.db.Exec(ctx, resetPassword, arg.Password, arg.ResetToken, arg.Email)
-	return err
+func (q *Queries) ResetPassword(ctx context.Context, arg ResetPasswordParams) (User, error) {
+	row := q.db.QueryRow(ctx, resetPassword, arg.Password, arg.ResetToken, arg.Email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Username,
+		&i.PhoneNumber,
+		&i.Password,
+		&i.Role,
+		&i.IsVerified,
+		&i.CreatedAt,
+		&i.ResetToken,
+		&i.ResetTokenExpiry,
+	)
+	return i, err
 }
 
 const updateResetToken = `-- name: UpdateResetToken :exec

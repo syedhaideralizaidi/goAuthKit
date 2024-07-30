@@ -98,7 +98,7 @@ func ResetPassword(c *gin.Context) {
 		Email:      req.Email,
 	}
 
-	err = database.Queries.ResetPassword(context.Background(), requestResetPassword)
+	_, err = database.Queries.ResetPassword(context.Background(), requestResetPassword)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})

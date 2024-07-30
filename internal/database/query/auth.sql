@@ -45,7 +45,7 @@ SELECT id, email, username, phone_number, password, role, is_verified, created_a
 FROM users
 WHERE reset_token = $1 AND reset_token_expiry > NOW();
 
--- name: ResetPassword :exec
+-- name: ResetPassword :one
 UPDATE users
 SET
     password = $1,
@@ -56,4 +56,5 @@ SET
                       ELSE is_verified
         END
 WHERE reset_token = $2
-  AND reset_token_expiry > NOW() AND email = $3;
+  AND reset_token_expiry > NOW() AND email = $3
+RETURNING *;
