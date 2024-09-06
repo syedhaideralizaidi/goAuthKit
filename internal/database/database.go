@@ -12,6 +12,7 @@ import (
 var Conn *pgx.Conn
 var Queries *db.Queries
 
+// Postgres Connection
 func ConnectDB() {
 	var err error
 	Conn, err = pgx.Connect(context.Background(), "postgres://root:secret@localhost:5432/authKit?sslmode=disable")
